@@ -1,0 +1,70 @@
+module real_alu (
+    input clk,
+    input rst,
+    input in[16],
+    input alufn[6],
+    input press,
+    output out_answer[16],
+    output out_z,
+    output out_v,
+    output out_n
+  ) {
+    fsm state(.clk(clk), .rst(rst)) = {WAIT,STORE_X, CALCULATE};
+    dff answer_mid[16](#INIT(0),.clk(clk),.rst(rst));
+    dff z_mid[1](#INIT(0),.clk(clk),.rst(rst));
+    dff v_mid[1](#INIT(0),.clk(clk),.rst(rst));
+    dff n_mid[1](#INIT(0),.clk(clk),.rst(rst));
+    dff a_mid[16](#INIT(0),.clk(clk),.rst(rst));
+    dff b_mid[16](#INIT(0),.clk(clk),.rst(rst));
+    dff alufn_mid[6](#INIT(0),.clk(clk),.rst(rst));
+
+    alu alu_virtual;
+  always{
+
+    if(rst==b1){
+      alu_virtual.a=16b0;                  //reset all inputs if rst is pressed
+      alu_virtual.b=16b0;
+      alu_virtual.alufn=6b0;
+     }
+
+    alu_virtual.a=a_mid.q;                 //assign inputs to alu module
+    alu_virtual.b=b_mid.q;
+    alu_virtual.alufn=alufn_mid.q;
+
+    case(state.q){
+    state.WAIT:
+      a_mid.d=in;                      //store inputs a and alufn into dffs
+      alufn_mid.d=alufn;
+      if(press){ 
+        state.d=state.STORE_X;         //change state of FSM when enter button is pressed
+      }else{ 
+        state.d=state.q; 
+      }
+    state.STORE_X:
+      b_mid.d=in;                      //store input b into dff
+      if(press){
+        state.d=state.CALCULATE;       //change state of FSM when enter button is pressed
+      }else{ 
+        state.d=state.q; 
+      }
+    state.CALCULATE:
+      alu_virtual.a=a_mid.q;           //assigns the outputs from dffs into alu module 
+      alu_virtual.b=b_mid.q;
+      alu_virtual.alufn=alufn_mid.q;
+
+      z_mid.d=alu_virtual.z;           //assigns outputs from alu module into dffs
+      v_mid.d=alu_virtual.v;
+      n_mid.d=alu_virtual.n;
+      answer_mid.d=alu_virtual.alu;  
+      if(press){                      //change the state of FSM when enter button is pressed
+        state.d=state.WAIT; 
+      }else{ 
+        state.d=state.q; 
+      }
+    }
+     out_z=z_mid.q;                  //assign outputs of dffs to the module's outputs
+     out_v=v_mid.q;
+     out_n=n_mid.q;
+     out_answer = answer_mid.q;
+}
+}

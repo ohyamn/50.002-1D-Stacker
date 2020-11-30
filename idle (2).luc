@@ -1,0 +1,11 @@
+module idle (
+    input idle,
+    output screen_matrix[10][6]
+
+  ){
+    win_or_lose if_lose;
+  always{
+    if_lose.win_or_lose= !idle;
+    screen_matrix= if_lose.screen_matrix;
+  }
+}

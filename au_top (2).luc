@@ -1,0 +1,73 @@
+module au_top (
+    input clk,              // 100MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input usb_rx,           // USB->Serial input
+    output usb_tx,          // USB->Serial output
+    output io_led [3][8],   // LEDs on IO Shield
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    output matrix[6],
+    input stop_button,
+    input reset_button,
+    input io_dip[3][8],
+    input io_button[5]
+  ) {
+  
+  
+ // led_writer led_row[10](#PIXEL_COUNT(6), .clk(clk), .rst(rst_n)); //set for 6 pixels
+  //var i;
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+     show_matrix_on_led show_matrix(.rst(rst_n));
+ //   dff led_matrix[10][6][24];
+     dff led_matrix[10][6](#INIT({b000001,6b0,6b0,6b0,6b0,6b0,6b0,6b0,6b0,b000001}));
+    
+     button_conditioner buttoncond[2];
+     edge_detector buttondetector[2] (#RISE(1),#FALL(0));
+   
+    
+     //set io_button[1] as reset button
+  }
+    
+  always {
+
+   
+    buttoncond.in[0] = stop_button;
+    buttoncond.in[1] = reset_button;
+    
+    buttondetector.in=buttoncond.out;
+  
+   
+    show_matrix.stop_button=buttondetector.out[0];
+    show_matrix.reset_button=buttondetector.out[1];
+    
+    led_matrix.d= show_matrix.led_matrix;
+
+    //for (i=0; i<10; i++){
+      // led_row.update[i] = 1;
+      // led_row.color[i] = 24b1;
+      // led_row.color[i]= led_matrix.q[i][led_row.pixel[i]];
+    
+    matrix=led_matrix.q[0];
+    //matrix[5:0]=b111111;
+    
+   //  }
+
+   
+   
+    
+    usb_tx = usb_rx;        // loop serial port
+    
+    led = 8h00;             // turn LEDs off
+    
+    io_led = 3x{{8h00}};    // turn LEDs off
+    io_seg = 8hff;          // turn segments off
+    io_sel = 4hf;           // select no digits
+
+    
+   
+  }
+}

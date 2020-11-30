@@ -1,0 +1,58 @@
+module get_next_state_of_current_row (
+    input clk,
+    input shift_or_check,
+    input pre_row[16],
+    input current_row[16],
+    output next_state_of_current_row [16]
+  ){
+    .clk(clk){
+      dff predirection(#INIT(1));
+    
+ 
+      get_next_direction_to_shift get_direction;
+    }
+    
+
+    alu alu;
+    
+  always{
+   
+    
+    get_direction.current_row = 16b0;
+    get_direction.direction = b1;
+    next_state_of_current_row=16b0;
+   
+    
+
+    alu.a= current_row;
+    alu.b=h0000;
+    alu.alufn=6b0;
+    
+   if(shift_or_check==b1){
+        get_direction.direction=predirection.q;
+        get_direction.current_row= current_row;
+    
+        if(get_direction.next_direction==b1){
+           alu.a= current_row;
+           alu.b=h0001;
+           alu.alufn=h20; //SHL h21
+           predirection.d=b1;
+           next_state_of_current_row=alu.alu;
+        }else if(get_direction.next_direction==b0){
+           alu.a= current_row;
+           alu.b=h0001;
+           alu.alufn=h21; //SHR h20
+           predirection.d=b0;
+           next_state_of_current_row=alu.alu;
+        }
+
+   }else if(shift_or_check==b0){
+        alu.a= current_row;
+        alu.b= pre_row;
+        alu.alufn= h18; //AND h18
+        next_state_of_current_row=alu.alu;
+
+    }
+
+  }
+}

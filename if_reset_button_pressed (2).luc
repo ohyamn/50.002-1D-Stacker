@@ -1,0 +1,10 @@
+module if_reset_button_pressed (
+    output screen_matrix[9][6]
+  ){
+  var i;
+  always{
+    for(i=0; i<9;i++){
+    screen_matrix[i]=b000000;
+    }
+  } 
+}
