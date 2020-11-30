@@ -1,5 +1,6 @@
 module get_matrix (
     input clk,
+    input rst,
     input stop_button,
     input reset_button,
     input pre_screen_matrix[10][6],
@@ -9,21 +10,22 @@ module get_matrix (
     idle idle;
     win_or_lose win_or_lose;
     if_reset_button_pressed if_reset_button_pressed;
+ //   alu alu;
    
     .clk(clk){
-      dff level_num [$clog2(10)](#INIT(0));
+      dff level_num[4](#INIT(0));
       dff current_row[16](#INIT(16b0));
       dff pre_row[16](#INIT(16b0));
-    
       dff current_screen_matrix_mid[10][6](#INIT({b000111,6b0,6b0,6b0,6b0,6b0,6b0,6b0,6b0,b000111}));
-    
-      fsm state(#INIT(IDLE))={IDLE, INITIAL, SHIFT, CHECK_WIN_OR_LOSE, WIN, LOSE, OLD};
-      
+      fsm state(#INIT(IDLE))={IDLE, INITIAL, SHIFT, CHECK_OR_INITIAL, CHECK, CHECK_WIN_OR_LOSE, WIN, LOSE};
       dff reset_button_reg(#INIT(0));
       dff stop_button_reg(#INIT(0));
     
       get_next_state_of_current_row get_next_state_of_current_row;
-      }
+    
+      dff speed1[24](#INIT(24b0));
+      dff speed1Edge(#INIT(0));
+    }
 
    always{
       if(stop_button_reg.q==b0 && stop_button==b1){
@@ -31,9 +33,10 @@ module get_matrix (
       }
       if(reset_button_reg.q==b0 && reset_button==b1){
          reset_button_reg.d=b1;
-      }    
-    
-
+      }  
+      
+     
+      
     
       idle.idle=b0;
       win_or_lose.win_or_lose=b0;
@@ -54,10 +57,11 @@ module get_matrix (
            if(reset_button_reg.q==1){
               state.d = state.INITIAL;
             }else{ 
-              state.d=state.IDLE;
+              state.d=state.q;
             }
         
        state.INITIAL:
+          level_num.d=0;
           current_screen_matrix_mid.d[9:1]=if_reset_button_pressed.screen_matrix;
           current_screen_matrix_mid.d[0]=b111100;
           
@@ -65,58 +69,54 @@ module get_matrix (
           current_row.d=c{10b0,b111100};
           
           current_screen_matrix=current_screen_matrix_mid.q;
-        
-          pre_row.d[5:0]=b101011;
-        
+          pre_row.d[5:0]=b111111;
           reset_button_reg.d=0;
           state.d=state.SHIFT;
-        
-        state.OLD:
-          current_screen_matrix_mid.d=current_screen_matrix_mid.q;
-          current_screen_matrix=current_screen_matrix_mid.q;
-      
-        
-          current_row.d=c{10b0,current_screen_matrix_mid.q[level_num.q]};
-          pre_row.d=pre_row.q;
-        
-          if(stop_button_reg.q==1){
-             state.d=state.CHECK_WIN_OR_LOSE;
-          }else if(reset_button_reg.q==b1){ 
-             state.d=state.SHIFT;
-             reset_button_reg.d=0;
-          }else{
-             state.d=state.OLD;
-          }
+
 
       
         state.SHIFT:
+          if(speed1.q==hFFFFFF){
+            speed1.d=24b0;
+            speed1Edge.d=b1;
+          }else{ 
+            speed1.d=speed1.q+1;
+          }
+        
           get_next_state_of_current_row.pre_row=pre_row.q;
           get_next_state_of_current_row.current_row=current_row.q;
           get_next_state_of_current_row.shift_or_check=b1;
-        
-          current_screen_matrix_mid.d[level_num.q]=get_next_state_of_current_row.next_state_of_current_row[5:0];
-        
+          
+          if(speed1Edge.q==b1){
+              current_screen_matrix_mid.d[level_num.q]=get_next_state_of_current_row.next_state_of_current_row[5:0];
+              speed1Edge.d=b0;
+          }
           current_row.d=c{10b0,current_screen_matrix_mid.q[level_num.q]};
-        
           current_screen_matrix=current_screen_matrix_mid.q;
-                
+   
           if(level_num.q>1){
              pre_row.d[5:0]= pre_screen_matrix[level_num.q-1];
           }else{ 
-              pre_row.d[5:0]=b101011;
+              pre_row.d[5:0]=b111111;
           } //0011 1111 
         
-        
-          if(stop_button_reg.q==1){
-             state.d=state.CHECK_WIN_OR_LOSE;
-          }else if(reset_button_reg.q==1){ 
-            state.d = state.INITIAL;
+          if(stop_button_reg.q==1 || reset_button_reg.q==1){
+             state.d=state.CHECK_OR_INITIAL;
           }else{
-            state.d=state.OLD;
+            state.d=state.SHIFT;
           }
         
+      state.CHECK_OR_INITIAL:
+        if(reset_button_reg.q==1){
+          state.d=state.INITIAL;
+        }else if(stop_button_reg.q==1){
+          state.d=state.CHECK;
+        }
+        
+        
     
-      state.CHECK_WIN_OR_LOSE:  
+      state.CHECK:  
+       
         get_next_state_of_current_row.pre_row=pre_row.q;
         get_next_state_of_current_row.current_row=current_row.q;
         get_next_state_of_current_row.shift_or_check=b0;
@@ -125,25 +125,37 @@ module get_matrix (
            
         
         current_row.d=c{10b0,current_screen_matrix_mid.q[level_num.q]};
+        pre_row.d=pre_row.q;
+        
+        level_num.d=1;
+        
 
         stop_button_reg.d=0;
-        level_num.d=level_num.q+1;
+        
+     //   level_num.d=level_num.q+1;
+        
 
-        if(current_row.q==16b0){
-          state.d=state.LOSE;//why always this output
-        }else if(level_num.q==10 && current_row.q!=16b0 ){
-          state.d=state.WIN;
-        }else if(reset_button_reg.q==1 && level_num.q!=1 && current_row.q!=16b0 ){
-          state.d = state.INITIAL;
+        if(current_row.q==16b0 || level_num.q[3]==b1){
+          state.d=state.CHECK_WIN_OR_LOSE;
         }else{ 
-          state.d=state.OLD;
+          state.d=state.SHIFT;
         }
-          
-
+        
+        current_screen_matrix_mid.d[0]=c{b10000,level_num.q[0]};
+        
         current_screen_matrix=current_screen_matrix_mid.q;
-        level_num_out=level_num.q;   
+        level_num_out=level_num.q;  
+        
+      state.CHECK_WIN_OR_LOSE:
+        
+        if(current_row.q==16b0){
+           state.d=state.LOSE;
+        }else if(level_num.q[3]==b1){
+           state.d=state.WIN;
+        }
     
       state.WIN:
+      
         win_or_lose.win_or_lose=1;
         current_screen_matrix_mid.d=win_or_lose.screen_matrix;
         if(reset_button_reg.q==1){
@@ -155,6 +167,7 @@ module get_matrix (
 
     
       state.LOSE:
+      
         win_or_lose.win_or_lose=0;
         current_screen_matrix_mid.d=win_or_lose.screen_matrix;
         if(reset_button_reg.q==1){
