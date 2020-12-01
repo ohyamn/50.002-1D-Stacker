@@ -2,7 +2,7 @@ module show_matrix_on_led(
       input clk,
       input rst,
       input stop_button,
-      input reset_button,
+      input reset_button, 
     
       output led_matrix[10][6]
    ){
@@ -10,14 +10,8 @@ module show_matrix_on_led(
 
       .clk(clk) {
          dff matrix[10][6] (#INIT({6b0,6b0,6b0,6b0,6b0,6b0,6b0,6b0,6b0,6b0}));
-         dff level_num[$clog2(10)]  (#INIT(0));
-         counter speed1(#SIZE(1), #DIV(24),.rst(rst));
-         edge_detector speed1Edge(#RISE(1), #FALL(0));
-//         counter speed2(#SIZE(1), #DIV(23),.rst(rst));
-//         counter speed3(#SIZE(1), #DIV(22),.rst(rst)); //fast
-//         edge_detector speed1Edge(#RISE(1), #FALL(0));
-//         edge_detector speed2Edge(#RISE(1), #FALL(0));
-         get_matrix get_matrix;
+        
+         get_matrix get_matrix(.rst(rst));
        }
      //  edge_detector speed1Edge(#RISE(1), #FALL(0),.clk(speed1.value));
        
@@ -25,37 +19,17 @@ module show_matrix_on_led(
       
    always{
    
-    speed1Edge.in=speed1.value;
-   // speed2Edge.in=speed2.value;
-   // speed3Edge.in=speed3.value;
+
     
     get_matrix.pre_screen_matrix=matrix.q;
     get_matrix.stop_button=stop_button;
     get_matrix.reset_button=reset_button;
     
-//    if(speed1Edge.out==b1){
+
     matrix.d= get_matrix.current_screen_matrix;
-    level_num.d=get_matrix.level_num_out;
-//   }
+ 
     led_matrix=matrix.q;
-    
-//    if(level_num.q>=6){
-//      if(speed3Edge.out==b1){
-//        matrix.d= get_matrix.current_screen_matrix;
-//        level_num.d=get_matrix.level_num_out;
-//      }
-//    }else if(level_num.q>=3){
-//      if(speed2Edge.out==b1){
-//        matrix.d= get_matrix.current_screen_matrix;
-//        level_num.d=get_matrix.level_num_out;
-//    }
-//    }else if(level_num.q>=0){
-//      if(speed1Edge.out==b1){
-//        matrix.d= get_matrix.current_screen_matrix;
-//        level_num.d=get_matrix.level_num_out;
-//      }
-//    }
-    
+
       
 
   }

@@ -13,7 +13,7 @@ module win_or_lose (
          }
       }else if(win_or_lose==0){
          for(i=0; i<10;i++){
-            screen_matrix[i]=b000011;
+            screen_matrix[i]=b000000;
          }
       }
    }

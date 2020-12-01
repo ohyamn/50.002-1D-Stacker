@@ -1,0 +1,55 @@
+module ledtest (
+  input clk,  // clock
+  input rst,  // reset
+  input pattern[8][6], //8 sets of 6bit pattern for each row
+  output a[6], //6 anode pins
+  output c[8]  //8 cathode pins
+  ) {
+
+    .clk(clk) {
+      .rst(rst){
+        counter slowclock(#SIZE(3),#DIV(10));  //smaller the faster the refresh
+        dff cSignal[8](.rst(rst)); //D flip-flip to store cathode signal
+        dff aSignal[6](.rst(rst)); //D flip-flip to store anode signal
+      }
+    }
+
+
+    //we scan through each row and draw the row pattern based on pattern[]
+    //ie. running through 16 rows, each with different pattern and repeat
+    always {
+      a = pattern[slowclock.value];
+      c = b11111111;
+      aSignal.d = b000000;
+      cSignal.d = b11111111;
+
+      case(slowclock.value) {
+        0:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b00000001;
+        1:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b00000010;
+        2:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b00000100;
+        3:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b00001000;
+        4:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b00010000;
+        5:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b00100000;
+        6:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b01000000;
+        7:
+          aSignal.d = ~pattern[slowclock.value];
+          cSignal.d = b10000000;
+      }
+      a = aSignal.q;
+      c = cSignal.q;
+    }
+  }
