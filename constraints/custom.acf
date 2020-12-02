@@ -1,18 +1,18 @@
-pin stop_button C23 pulldown;
-pin reset_button C21 pulldown;
+pin stop_button C3 pulldown;
+pin reset_button C48 pulldown;
 
-pin led_cathode[0] C3;
-pin led_cathode[1] C6;
-pin led_cathode[2] C9;
+pin led_cathode[0] C27;
+pin led_cathode[1] C30;
+pin led_cathode[2] C42;
 pin led_cathode[3] C12;
-pin led_cathode[4] C15;
-pin led_cathode[5] C18;
-pin led_cathode[6] C2;
-pin led_cathode[7] C5;
+pin led_cathode[4] C45;
+pin led_cathode[5] C15;
+pin led_cathode[6] C18;
+pin led_cathode[7] C36;
 
-pin led_anode[0] C48;
-pin led_anode[1] C45;
-pin led_anode[2] C42;
-pin led_anode[3] C39;
-pin led_anode[4] C36;
-pin led_anode[5] C33;
+pin led_anode[0] C33;
+pin led_anode[1] C6;
+pin led_anode[2] C39;
+pin led_anode[3] C24;
+pin led_anode[4] C9;
+pin led_anode[5] C21;
